@@ -18,17 +18,21 @@ import string
 # 	print(view_pubkey)
 # 	print(str(base64encoded_privkey.decode()))
 class primary_addresses():
+	""" makes your primary address for receiving Tokens and can verify it """
 
-	def make_primary_address(public_view, private_view, public_spend, private_spend):
+	def make_primary_address(public_view, public_spend):
 		""" Makes the primary address and encodes it"""
-		data = public_view + private_view + public_spend + private_spend
+		data = public_view + public_spend 
 		encoded_data = data.encode()
+		encoded_data = base64.b64encode(encoded_data)
 		encoded_primary = hashlib.sha256(encoded_data).hexdigest()
+		return encoded_primary
 
 
-	def decode_primary_address(primary_address, public_view, private_view, public_spend, private_spend):
-		data = public_view + private_view + public_spend + private_spend
+	def decode_primary_address(primary_address, public_view, public_spend):
+		data = public_view + public_spend 
 		encoded_data = data.encode()
+		encoded_data = base64.b64encode(encoded_data)
 		hashed_data = hashlib.sha256(encoded_data).hexdigest()
 		if hashed_data == primary_address:
 			return True
@@ -39,6 +43,7 @@ class primary_addresses():
 
 
 class Make_Keys():
+	""" creates wallet keys or addresses """
 
 	def make_password():
 		characters = string.ascii_letters + string.punctuation  + string.digits
@@ -61,15 +66,18 @@ class Make_Keys():
 		return {'pubview':pubkey_view, 'privview':privkey_view, 'pubspend': pub_spend, 'privsepend': priv_spend}
 	
 	def make_stealth_keys(primary_address):
-		stealth_address = pbkdf2_sha256.hash(primary_address)
+		stealth_address = str(pbkdf2_sha256.hash(primary_address))
+		stealth_address = stealth_address.replace('$pbkdf2-sha256$29000$', '')
 		return stealth_address
 
 	
 class Check_Wallet_Balance():
+	""" Checks Balance and the validity of wallet addresses """
 	def __init__(self):
 		self.stealth_addresses = []
 	def verify_stealth_keys(self, stealth_key, primary_address):
-		verify = pbkdf2_sha256.verify(primary_address, stealth_key)
+		full_stealth_address = '$pbkdf2-sha256$29000$'+stealth_key
+		verify = pbkdf2_sha256.verify(primary_address, full_stealth_address)
 		return verify
 	
 	def check_balance(self, primary_address, blockchain):
@@ -146,6 +154,15 @@ class Check_Wallet_Balance():
 		if double_spend == False:
 			self.stealth_addresses.append(stealth_key)
 			return double_spend
+
+	def verify_keys(self, publickey, privatekey):
+		full_publickey = '$pbkdf2-sha256$29000$'+publickey
+		# full_privatekey = '$pbkdf2-sha256$29000$'+privatekey
+		verify = pbkdf2_sha256.verify(privatekey, full_publickey)
+		return verify
+
+
+
 if __name__ == '__main__'():
 	primary_addresses()
 	Check_Wallet_Balance()
