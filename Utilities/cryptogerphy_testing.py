@@ -63,7 +63,7 @@ class Make_Keys():
 		pub_spend = str(pbkdf2_sha256.hash(priv_spend))
 		pub_spend = pub_spend.replace('$pbkdf2-sha256$29000$', '')
 
-		return {'pubview':pubkey_view, 'privview':privkey_view, 'pubspend': pub_spend, 'privsepend': priv_spend}
+		return {'public view key':pubkey_view, 'private view key':privkey_view, 'public spend key': pub_spend, 'private sepend key': priv_spend}
 	
 	def make_stealth_keys(primary_address):
 		stealth_address = str(pbkdf2_sha256.hash(primary_address))
