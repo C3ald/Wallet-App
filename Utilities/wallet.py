@@ -90,8 +90,7 @@ class Wallet:
         """ verifies the wallet """
         self.verify = False
         # self.verify1 = False
-        self.verify = pbkdf2_sha256.verify(f'$pbkdf2-sha256$29000${privatekey}', 
-                      f'$pbkdf2-sha256$29000${publickey}')
+        self.verify = pbkdf2_sha256.verify(f'$pbkdf2-sha256$29000${privatekey}', f'$pbkdf2-sha256$29000${publickey}')
         # self.verify1 = pbkdf2_sha256.verify(phrase, privatekey)
         if  self.verify == True:
             return True
