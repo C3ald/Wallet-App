@@ -170,7 +170,7 @@ class Wallet:
         ii = 0
         stealth_addresses = []
         while i != len(chain):
-            for transaction in chain[i]['transaction']:
+            for transaction in chain[i]['data']:
                 if self.verify_wallet(privatekey=viewkey, publickey=transaction['receiver']) == True:
                     for address in stealth_addresses:
                         if address != transaction['receiver'] or address != transaction['sender']:
@@ -229,7 +229,7 @@ class Wallet:
         # self.publickey = self.publickey.replace('$pbkdf2-sha256$29000$', '')
         i = 1
         # ii = 0
-        transactions = chain[i]['transaction']
+        transactions = chain[i]['data']
         for transaction in transactions:
             receiver = transaction['receiver']
             sender = transaction['sender']
