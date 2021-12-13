@@ -144,7 +144,7 @@ class Check_Wallet_Balance():
 
 				
 	def double_spend_check(self, stealth_key):
-		self.stealth_addresses
+		self.stealth_addresses = []
 		for addresses in self.stealth_addresses:
 			if stealth_key == addresses:
 				double_spend = True
