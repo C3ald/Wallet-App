@@ -1,11 +1,12 @@
 from tkinter import *
-from Utilities.wallet import Wallet
+from Utilities.cryptography_testing import *
 from Utilities.encryption import Encrypt_and_Decrypt
 encrypt_and_decrypt = Encrypt_and_Decrypt()
-wallet = Wallet()
 app = Tk()
 
-
+makekeys = Make_Keys()
+prime_address = primary_addresses()
+verify_wallet = Check_Wallet_Balance()
 """ The GUI wallet for the Token Network """
 app.title('Token GUI Wallet')
 app.geometry('300x300')
@@ -14,7 +15,7 @@ app.geometry('300x300')
 hiLabel = Label(app, text='The GUI Wallet for Token')
 hiLabel.pack()
 
-generate_wallet = Button(command=wallet.make_wallet(), text='click to make a wallet!')
+generate_wallet = Button(command=makekeys.make_spend_view_receive_keys(), text='click to make a wallet!')
 generate_wallet.pack()
 # menu = Menubutton(app, text='menu')
 # menu.menu = Menu(menu)

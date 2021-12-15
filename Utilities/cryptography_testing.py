@@ -18,7 +18,7 @@ import string
 # 	print(view_pubkey)
 # 	print(str(base64encoded_privkey.decode()))
 class primary_addresses():
-	""" makes your primary address for receiving Tokens and can verify it """
+	""" makes your primary address for receiving Tokens and can verify the primary address """
 	def __init__(self):
 		pass
 	def make_primary_address(self, public_view):
@@ -54,7 +54,8 @@ class Make_Keys():
 		return str(passwd)
 
 
-	def make_spend_view_recieve_keys(self, password:str):
+	def make_spend_view_receive_keys(self):
+		password = str(self.make_password())
 		priv_spend = str(pbkdf2_sha256.hash(password))
 		priv_spend = priv_spend.replace('$pbkdf2-sha256$29000$', '')
 		pub_spend = str(pbkdf2_sha256.hash(priv_spend))
@@ -119,7 +120,7 @@ class Check_Wallet_Balance():
 		positive_balance = self.receiver_check(prime_addr, chain)
 		negative_balance = self.sender_check(prime_addr, chain)
 		balance = positive_balance - negative_balance
-		return balance
+		return {'receive address': prime_addr, 'balance': balance}
 		# else:
 			# return 'invalid keys'
 
@@ -141,7 +142,7 @@ class Check_Wallet_Balance():
 		return balance
 
 
-	def sender_check(self, sender_recieve_key, blockchain):
+	def sender_check(self, sender_receive_key, blockchain):
 		i = 1
 		balance = 0
 		if 1 < len(blockchain):
@@ -150,11 +151,11 @@ class Check_Wallet_Balance():
 				for transaction in transactions:
 					sender = transaction['sender']
 					amount = transaction['amount']
-					verify_wallet = self.verify_stealth_keys(sender, sender_recieve_key)
+					verify_wallet = self.verify_stealth_keys(sender, sender_receive_key)
 					if verify_wallet == True:
 						verify_double_spend = self.double_spend_check(stealth_key=sender)
 						if verify_double_spend == False:
-							balance = balance - amount
+							balance = balance + amount
 				i = i + 1
 		return balance
 
@@ -181,7 +182,7 @@ class Check_Wallet_Balance():
 
 
 
-if __name__ == '__main__'():
+if __name__ == '__main__':
 	primary_addresses()
 	Check_Wallet_Balance()
 	Make_Keys()
