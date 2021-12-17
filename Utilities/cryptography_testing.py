@@ -5,7 +5,9 @@ import base64
 # import math
 # import secrets
 import string
-
+from Utilities.algorithims import Algs
+# from blockchain import Blockchain
+algs = Algs()
 
 
 
@@ -17,6 +19,52 @@ import string
 # 	view_pubkey = pbkdf2_sha256.hash(str(base64encoded_privkey.decode()))
 # 	print(view_pubkey)
 # 	print(str(base64encoded_privkey.decode()))
+class Ring_CT():
+	""" Ring signatures """
+	def __init__(self):
+		pass
+	def make_ring_sign(self, blockchain: list, primary_address: string):
+		""" makes the signature """
+		ring_sign = [primary_address]
+		number_of_signatures = random.randint(4,5)
+		x = 0
+		while x != number_of_signatures:
+			i = random.randint(2, len(blockchain))
+			ii = random.randint(1, len(blockchain[i]['data']))
+			print(ii)
+			# iii = random.randint(1, len(blockchain[i]['data'][ii]))
+			# transaction = blockchain[i]['data'][ii]
+			iii = random.randint(1,2)
+			if iii == 1:
+				transaction = blockchain[i]['data'][ii]['sender']
+			
+			if iii == 2:
+				transaction = blockchain[i]['data'][ii]['receiver']
+			transaction = pbkdf2_sha256.hash(str(transaction))
+			transaction = transaction.replace('$pbkdf2-sha256$29000$', '')
+			ring_sign.append(transaction)
+			x = x+1
+		return ring_sign
+
+
+
+	def shuffle(self, ring_signitures):
+		""" Shuffles the signitures """
+		transactions = ring_signitures
+		length = range(len(transactions))
+		for i in length:
+			j = random.randint(0, i + 1)
+			transactions[i], transactions[j] = transactions[j], transactions[i]
+		return transactions
+
+
+	def ring_sign(self, blockchain:list, primary_address:string):
+		""" Automates ring signatures """
+		signatures = self.make_ring_sign(blockchain, primary_address)
+		new_transactions = self.shuffle(signatures)
+		return new_transactions
+
+
 class primary_addresses():
 	""" makes your primary address for receiving Tokens and can verify the primary address """
 	def __init__(self):
@@ -63,7 +111,7 @@ class Make_Keys():
 		view_key = str(pbkdf2_sha256.hash(priv_spend))
 		view_key = view_key.replace('$pbkdf2-sha256$29000$', '')
 		prime_addr = primary_addresses().make_primary_address(view_key)
-		return {'private spend key': priv_spend, 'public spend key': pub_spend, 'view key': view_key, 'receive address': prime_addr}
+		return {'private spend key': priv_spend, 'public spend key': pub_spend, 'view key': view_key, 'primary address': prime_addr, 'seed for wallet': password}
 
 		# privkey_view = str(pbkdf2_sha256.hash(password))
 		# privkey_view = privkey_view.replace('$pbkdf2-sha256$29000$', '')
@@ -131,13 +179,14 @@ class Check_Wallet_Balance():
 			while i != len(blockchain):
 				transactions = blockchain[i]['data']
 				for transaction in transactions:
-					receiver = transaction['receiver']
-					amount = transaction['amount']
-					verify_wallet = self.verify_stealth_keys(receiver, primary_address)
-					if verify_wallet == True:
-						verify_double_spend = self.double_spend_check(stealth_key=receiver)
-						if verify_double_spend == False:
-							balance = balance + amount
+					receivers = transaction['receiver']
+					for receiver in receivers:
+						amount = transaction['amount']
+						verify_wallet = self.verify_stealth_keys(receiver, primary_address)
+						if verify_wallet == True:
+							verify_double_spend = self.double_spend_check(stealth_key=receiver)
+							if verify_double_spend == False:
+								balance = balance + amount
 				i = i + 1
 		return balance
 
@@ -149,13 +198,14 @@ class Check_Wallet_Balance():
 			while i != len(blockchain):
 				transactions = blockchain[i]['data']
 				for transaction in transactions:
-					sender = transaction['sender']
-					amount = transaction['amount']
-					verify_wallet = self.verify_stealth_keys(sender, sender_receive_key)
-					if verify_wallet == True:
-						verify_double_spend = self.double_spend_check(stealth_key=sender)
-						if verify_double_spend == False:
-							balance = balance + amount
+					senders = transaction['sender']
+					for sender in senders:
+						amount = transaction['amount']
+						verify_wallet = self.verify_stealth_keys(sender, sender_receive_key)
+						if verify_wallet == True:
+							verify_double_spend = self.double_spend_check(stealth_key=sender)
+							if verify_double_spend == False:
+								balance = balance + amount
 				i = i + 1
 		return balance
 
@@ -182,8 +232,55 @@ class Check_Wallet_Balance():
 
 
 
+
+class Decoy_addresses():
+	def __init__(self):
+		pass
+	def decoy_keys(self):
+		""" makes decoy keys """
+		password = Make_Keys().make_password()
+		decoy_privkey = pbkdf2_sha256.hash(str(password))
+		decoy_privkey= decoy_privkey.replace('$pbkdf2-sha256$29000$', '')
+		decoy_pubkey = pbkdf2_sha256.hash(str(decoy_privkey))
+		decoy_pubkey= decoy_pubkey.replace('$pbkdf2-sha256$29000$', '')
+		decoy_key = {'publickey': decoy_pubkey, 'privatekey': decoy_privkey}
+		return decoy_key
+
+	def decoy_transactions(self, transactions):
+		""" makes  decoy transactions"""
+		num_decoy = random.randint(12,20)
+		for x in range(num_decoy):
+			amount = random.randint(1, 10000)
+			key1 = self.decoy_keys()
+			key2 = self.decoy_keys()
+			random_amount = random.randint(1, int(amount))
+			random_amount = algs.network_fee(random_amount)
+		transactions.append({'sender':key1['publickey'], 'receiver':key2['publickey'],'amount':random_amount})
+		transactions = self.shuffle(transactions)
+		return transactions
+
+	def shuffle(self,transactions: list):
+		""" Shuffles the transactions """
+		length = range(len(transactions))
+		for i in length:
+			j = random.randint(0, i + 1)
+			transactions[i], transactions[j] = transactions[j], transactions[i]
+		return transactions
+
+
+
+
+
+
 if __name__ == '__main__':
 	primary_addresses()
 	Check_Wallet_Balance()
 	Make_Keys()
+	Ring_CT()
+	keys = Make_Keys().make_spend_view_receive_keys()
+	stealth_keys = Make_Keys().make_stealth_keys(primary_address=keys['primary address'])
+	print(keys)
+	print()
+	print()
+	print(f'stealth address: {stealth_keys}')
 # make_stealth_keys()
