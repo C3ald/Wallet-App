@@ -105,6 +105,7 @@ class Ring_CT():
 		while x != number_of_signatures:
 			i = random.randint(2, len(blockchain))
 			ii = random.randint(1, len(blockchain[i]['data']))
+			# iv = random.randint(0, len(blockchain[i]['data']))
 			print(ii)
 			# iii = random.randint(1, len(blockchain[i]['data'][ii]))
 			# transaction = blockchain[i]['data'][ii]
