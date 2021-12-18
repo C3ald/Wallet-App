@@ -250,10 +250,10 @@ class Decoy_addresses():
 		""" makes  decoy transactions"""
 		num_decoy = random.randint(12,20)
 		for x in range(num_decoy):
-			amount = random.randint(1, 10000)
+			amount = random.uniform(1, 10000)
 			key1 = self.decoy_keys()
 			key2 = self.decoy_keys()
-			random_amount = random.randint(1, int(amount))
+			random_amount = random.uniform(1, amount)
 			random_amount = algs.network_fee(random_amount)
 		transactions.append({'sender':key1['publickey'], 'receiver':key2['publickey'],'amount':random_amount})
 		transactions = self.shuffle(transactions)
