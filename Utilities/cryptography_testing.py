@@ -263,7 +263,7 @@ class Decoy_addresses():
 		""" Shuffles the transactions """
 		length = range(len(transactions))
 		for i in length:
-			j = random.randint(0, i + 1)
+			j = random.randint(0, i)
 			transactions[i], transactions[j] = transactions[j], transactions[i]
 		return transactions
 
