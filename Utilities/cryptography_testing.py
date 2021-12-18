@@ -5,7 +5,7 @@ import base64
 # import math
 # import secrets
 import string
-from Utilities.algorithims import Algs
+from algorithims import Algs
 # from blockchain import Blockchain
 algs = Algs()
 
