@@ -5,7 +5,7 @@ import base64
 # import math
 # import secrets
 import string
-# from algorithms import Algs
+import requests as r
 # from blockchain import Blockchain
 
 
@@ -23,11 +23,11 @@ class Algs():
 	""" algorithms for the blockchain """
 	def __init__(self):
 		self.difficulty = 0
-		self.fee = 0.00001
-		self.list_count = ['0','0','0']
+		self.fee = 0.0000001
+		self.list_count = []
 		self.count = str(len(self.list_count))
 		self.new_amount = 0
-		self.amount = 1.63
+		self.amount = 100
 
 	
 	def difficulty_increase(self, chain:list, nodes):
@@ -37,7 +37,22 @@ class Algs():
 		# self.list_count = []
 		# self.difficulty = 0
 		# chain_index = 0
+		self.list_count = ['0']
+		number_of_nodes = 0
 		self.amount = self.amount_change(chain=chain)
+		for block in chain:
+			index = block['index']
+			if index % 20000 == 0 and index != 0:
+				self.amount = self.amount / 2
+				if len(self.list_count) != 9:
+					self.list_count.append('0')
+		for node in nodes:
+			test = r.get(f'http://{node}/get_the_chain')
+			if test.status_code == 200:
+				number_of_nodes = number_of_nodes + 1
+		if number_of_nodes != 0 and number_of_nodes % 1000 == 0:
+			interval = number_of_nodes / 1000
+			self.amount = self.amount / interval
 		# if len(chain) > 1999:
 		# 	while chain_index != len(chain):
 		# 		if chain[i]['index'] % 2000 == 0:
@@ -60,7 +75,7 @@ class Algs():
 
 	def network_fee(self, amount):
 		""" the fee for transactions """
-		self.fee = 0.00001
+		self.fee = 0.0000001
 		self.new_amount = 0
 		# self.fee = amount * self.fee
 		self.new_amount = amount - self.fee
@@ -70,7 +85,7 @@ class Algs():
 	# def amount_change(self, amount, nodes, chain):
 	def amount_change(self, chain):
 		""" the change in block reward """
-		if len(chain) > 2:
+		if len(chain) > 1:
 			i = 1
 			transaction = chain [i]['data']
 		# self.new_amount = 0
@@ -80,15 +95,16 @@ class Algs():
 		# 		if 0 < self.new_amount - (len(nodes) / 1000):
 		# 			self.new_amount = self.new_amount - (len(nodes) / 1000)
 		# self.amount = self.new_amount
-			new_amount = 1.63
+			new_amount = 100
 		# for block in chain:
 		# 	for transaction in block:
 			while i != len(chain):
 				for data in transaction:
-					new_amount = new_amount + self.fee
+					if len(transaction) != 1:
+						new_amount = new_amount + self.fee
 				i = i + 1
 		else:
-			new_amount = 1.63
+			new_amount = 100
 		self.amount = new_amount
 		return self.amount
 	
@@ -100,35 +116,46 @@ class Ring_CT():
 	def make_ring_sign(self, blockchain: list, primary_address: string):
 		""" makes the signature """
 		ring_sign = [primary_address]
-		number_of_signatures = random.randint(4,5)
+		number_of_signatures = self.calculate_number_signatures(blockchain)
 		x = 0
 		while x != number_of_signatures:
-			i = random.randint(2, len(blockchain))
-			ii = random.randint(1, len(blockchain[i]['data']))
-			# iv = random.randint(0, len(blockchain[i]['data']))
-			print(ii)
-			# iii = random.randint(1, len(blockchain[i]['data'][ii]))
-			# transaction = blockchain[i]['data'][ii]
-			iii = random.randint(1,2)
-			if iii == 1:
-				transaction = blockchain[i]['data'][ii]['sender']
+			# i = random.randint(2, len(blockchain))
+			# ii = random.randint(0, len(blockchain[i]['data']))
+			# print(ii)
+			# if len(blockchain[i]['data']) > 1:
+			# # iii = random.randint(1, len(blockchain[i]['data'][ii]))
+			# # transaction = blockchain[i]['data'][ii]
+			# 	iii = random.randint(1,2)
+			# 	if iii == 1:
+			# 		transaction = blockchain[i]['data'][ii]['sender']
 			
-			if iii == 2:
-				transaction = blockchain[i]['data'][ii]['receiver']
-			transaction = pbkdf2_sha256.hash(str(transaction))
-			transaction = transaction.replace('$pbkdf2-sha256$29000$', '')
+			# 	if iii == 2:
+			# 		transaction = blockchain[i]['data'][ii]['receiver']
+			# 	transaction = pbkdf2_sha256.hash(str(transaction))
+			# 	transaction = transaction.replace('$pbkdf2-sha256$29000$', '')
+			# else:
+			transaction = Decoy_addresses().decoy_keys()['publickey']
+			
 			ring_sign.append(transaction)
 			x = x+1
+		ring_sign = self.shuffle(ring_sign)
 		return ring_sign
 
-
+	def calculate_number_signatures(self, blockchain):
+		""" Calculates the number of decoy transactions """
+		length_of_chain = len(blockchain[-1]['data'])
+		if length_of_chain > 5:
+			number_of_decoy_addr = 3
+		else:
+			number_of_decoy_addr = random.randint(4,5)
+		return number_of_decoy_addr
 
 	def shuffle(self, ring_signitures):
 		""" Shuffles the signitures """
 		transactions = ring_signitures
 		length = range(len(transactions))
 		for i in length:
-			j = random.randint(0, i + 1)
+			j = random.randint(0, i)
 			transactions[i], transactions[j] = transactions[j], transactions[i]
 		return transactions
 
@@ -259,7 +286,7 @@ class Check_Wallet_Balance():
 						amount = transaction['amount']
 						verify_wallet = self.verify_stealth_keys(receiver, primary_address)
 						if verify_wallet == True:
-							verify_double_spend = self.double_spend_check(stealth_key=receiver)
+							verify_double_spend = self.double_spend_check(stealth_key=receiver, chain=blockchain)
 							if verify_double_spend == False:
 								balance = balance + amount
 				i = i + 1
@@ -278,7 +305,7 @@ class Check_Wallet_Balance():
 						amount = transaction['amount']
 						verify_wallet = self.verify_stealth_keys(sender, sender_receive_key)
 						if verify_wallet == True:
-							verify_double_spend = self.double_spend_check(stealth_key=sender)
+							verify_double_spend = self.double_spend_check(stealth_key=sender, chain=blockchain)
 							if verify_double_spend == False:
 								balance = balance + amount
 				i = i + 1
@@ -287,7 +314,8 @@ class Check_Wallet_Balance():
 
 				
 	def double_spend_check(self, stealth_key, chain):
-		self.stealth_addresses
+		self.stealth_addresses = []
+		double_spend = False
 		if len(chain) > 1:
 			for addresses in self.stealth_addresses:
 				if stealth_key == addresses:
@@ -298,6 +326,9 @@ class Check_Wallet_Balance():
 			if double_spend == False:
 				self.stealth_addresses.append(stealth_key)
 				return double_spend
+		else:
+			double_spend = True
+			return double_spend
 
 	def verify_keys(self, publickey, privatekey):
 		full_publickey = '$pbkdf2-sha256$29000$'+publickey
