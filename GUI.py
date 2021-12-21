@@ -1,6 +1,6 @@
 from tkinter import *
-from Token_CLI.Utilities.cryptography_testing import *
-from Token_CLI.Utilities.encryption import Encrypt_and_Decrypt
+from Token_CLI.API.Utilities.cryptography_testing import *
+from Token_CLI.API.Utilities.encryption import Encrypt_and_Decrypt
 encrypt_and_decrypt = Encrypt_and_Decrypt()
 app = Tk()
 

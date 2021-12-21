@@ -4,17 +4,25 @@ import requests as r
 # from requests import api
 from tabulate import tabulate
 import time as t
-from Utilities.cryptography_testing import *
+from API.Utilities.cryptography_testing import *
+from API.main import app
+import uvicorn
 # import sys
 # sys.path.insert(1, '/Wallet-App/Utilities')
 # from Utilities import cryptography_testing
 # from cryptography_testing import *
 #Constants
+SERVER_NAME = 'Token Network'
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 8000
+SERVER_RELOAD = False
 SITE = 'localhost:8000/'
 GET_CHAIN = f'{SITE}get_the_chain'
 # MAKE_KEYS = f'{SITE}create_keys'
 MINING = f'{SITE}mining'
 CHECK_BALANCE = f'{SITE}check_balance'
+TRANSACTIONS = f'{SITE}add_unconfirmed_transaction'
+ADD_NODE = f'{SITE}add_node/'
 MAKE_KEYS = Make_Keys()
 # @click.command()
 
@@ -66,25 +74,24 @@ def create_keys():
 
 
 @click.command()
-@click.option('--publickey', prompt='what is your publickey', help='provide your publickey')
-def check_balance(publickey):
+@click.option('--viewkey', prompt='what is your publickey', help='provide your publickey')
+def check_balance(viewkey):
 	""" checks the balance of a public key """
-	data = {'publickey': publickey}
+	data = {'publickey': viewkey}
 	data = r.post(CHECK_BALANCE, json=data)
 	data = data.json()
-	key = data['publickey']
+	key = data['Address']
 	amount = data['balance']
 	data = f'{key} has {amount} Tokens'
 	click.echo(data)
 
 
 @click.command()
-@click.option('--publickey', prompt='what is your publickey', help='provide your publickey')
-@click.option('--privatekey', prompt='what is your privatekey', help='provide your privatekey')
-def mining(publickey, privatekey):
+@click.option('--primary_address', prompt='what is your primary address', help='provide your primary address')
+def mining(primary_address):
 	""" mines blocks """
 	stop = False
-	data = {'publickey':publickey, 'privatekey':privatekey}
+	data = {'publickey':primary_address}
 	request = r.post(MINING, json=data)
 	if request.status_code == 200:
 		while stop == False:
@@ -94,18 +101,66 @@ def mining(publickey, privatekey):
 			for re in request['message']:
 				index = re['index']
 				timestamp = re['timestamp']
-				reward = re['amount'[publickey]]
+				reward = re['amount'[primary_address]]
 				data = [index, timestamp, reward]
 				table.append(data)
 			click.echo(tabulate(table))
 	else:
-		return 'node must be down or invalid'
+		return 'node must be down or invalid! (make sure your node has started)'
 
+
+
+
+@click.command()
+@click.option('--public_spend_key', prompt='what is your public spend key', help='provide your public spend key')
+@click.option('--private_spend_key', prompt='what is your private spend key', help='provide your private spend key')
+@click.option('--view_key', prompt='what is your view key', help='provide your view key')
+@click.option('--receiver', prompt="what is the receiver's primary address", help="provide the receiver's primary address")
+@click.option('--amount', prompt='how many tokens would you like to send', help='provide the number of Tokens you want to send')
+def transaction(public_spend_key, private_spend_key, view_key, receiver, amount):
+	""" Makes transactions """
+	data = {'sender_publickey': public_spend_key, 'sender_privatekey': private_spend_key, 'sender_public_viewkey': view_key, 'receiver': receiver, 'amount': amount}
+	request = r.post(TRANSACTIONS, json=data)
+	if request.status_code == 200:
+		response = request['message']
+	else:
+		response = 'error, invalid response! (make sure your node has started)'
+	click.echo(response)
+
+
+
+
+click.command()
+click.option('--node', prompt='enter the url for the node you want to add without https:// or without http://', help='add a node')
+def add_node(node):
+	""" add a node """
+	data = {'node': node}
+	request = r.post(ADD_NODE, json=data)
+	if request.status_code == 200:
+		response = 'node added successfully!'
+	else:
+		response = 'error, invalid response! (make sure your node has started)'
+
+
+
+@click.command()
+@click.option('--start', prompt='would you like to start the node (Y/n)', help='Starts the Node')
+def start(start):
+	'starts the node'
+	if start == 'Y' or start == 'y':
+		uvicorn.run('token_cli:app', host=SERVER_HOST, port=SERVER_PORT, reload=SERVER_RELOAD)
+		return 'Node has been started!'
+	elif start == 'n' or start == 'N':
+		return 'Node was not started!'
+	else:
+		return 'Invalid response, node was not started!'
 
 cli.add_command(get_chain)
 cli.add_command(create_keys)
 cli.add_command(mining)
 cli.add_command(check_balance)
+cli.add_command(start)
+cli.add_command(transaction)
 
 
 
