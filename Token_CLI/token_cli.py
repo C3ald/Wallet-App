@@ -95,6 +95,9 @@ def decrypt_wallet(password, file_name):
 	""" decrypts the file containing your wallet """
 	key = password
 	decrypted_file = ENCRYPT_AND_DECRYPT.decrypt_file(password=key, encrypted_file=file_name)
+	print(' ')
+	print(' ')
+	print(' ')
 	click.echo(decrypted_file)
 
 
