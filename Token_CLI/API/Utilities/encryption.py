@@ -1,38 +1,50 @@
 from cryptography.fernet import Fernet
+import os
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
 class Encrypt_and_Decrypt():
 	""" Encryption and decryption of wallets to ensure security in the GUI wallet and while not in use with the GUI wallet """
 	def __init__(self):
-		self.password = None
+		pass
+	def key(self,password:str):
+		""" Encodes the key into bytes """
+		encoded_password = password.encode()
+		salt = b'\xfdJ\x99\xb7\xc3\x89hN\x9d\xa0\xa5\xc7\xb2J\x9c\x8f'
+		kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
+		key = base64.urlsafe_b64encode(kdf.derive(encoded_password))
+		return key
 	
-	def write_key(self, filename):
-		""" writes the key to a file """
-		key = Fernet.generate_key()
-		with open(f'{filename}.key', 'wb') as unlock:
-			unlock.write(key)
-		return {'message': f'your key is in {filename}'}
+	def write_to_file(self, file:str, data:str):
+		""" writes to the file """
+		encoded_data = data.encode()
+		open_file = open(file, 'wb')
+		with open_file as f:
+			f.write(encoded_data)
+		return file
 
-	def Encrypt_file(self, key, file):
-		""" Encrypts the file's content """
-		f = Fernet(key)
-		with open(file, 'rb') as orginal_file:
-			original = orginal_file.read()
-		encrypted = f.encrypt(original)
+	def encrypt_file(self, password:str, file):
+		""" encrypts the file """
+		key = self.key(password=password)
+		with open(file, 'rb') as f:
+			data = f.read()
+		fernet = Fernet(key)
+		encrypted = fernet.encrypt(data)
+		with open(f'{file}.encrypted', 'wb') as f:
+			f.write(encrypted)
+		result = f'{file}.encrypted'
+		return {'encrypted file': result, 'message': 'You can delete the original file '}
 	
-	def Write_in_Encrypted_file(self, encryptedfile, key, data):
-		""" Writes to the Encrypted file """
-		f = Fernet(key)
-		with open(encryptedfile, 'wb') as encrypted_file:
-			encrypted_file.write(f.encrypt(data))
-	
-	def Decrypt_file(self, encryptedfile, key):
-		""" Decrypts the Encrypted file's contents """
-		f = Fernet(key)
-		with open(encryptedfile, 'rb') as encrypted_file:
-			encrypted = encrypted_file.read()
-		decrypted = f.decrypt(encrypted)
-		with open(decrypted, 'rb') as decrypted_file:
-			decrypted_read = decrypted_file.read()
-		return decrypted_read
-	
+	def decrypt_file(self, password:str, encrypted_file):
+		""" Decrypts the encrypted file """
+		key = self.key(password)
+		with open(encrypted_file, 'rb') as f:
+			data = f.read()
+		fernet = Fernet(key)
+		decrypted = fernet.decrypt(data).decode()
+		return decrypted
+
+
 if __name__ == '__main__':
 	Encrypt_and_Decrypt()

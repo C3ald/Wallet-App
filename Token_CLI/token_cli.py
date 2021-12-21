@@ -7,6 +7,7 @@ import time as t
 from API.Utilities.cryptography_testing import *
 from API.main import app
 import uvicorn
+from API.Utilities.encryption import Encrypt_and_Decrypt
 # import sys
 # sys.path.insert(1, '/Wallet-App/Utilities')
 # from Utilities import cryptography_testing
@@ -24,6 +25,7 @@ CHECK_BALANCE = f'{SITE}check_balance'
 TRANSACTIONS = f'{SITE}add_unconfirmed_transaction'
 ADD_NODE = f'{SITE}add_node/'
 MAKE_KEYS = Make_Keys()
+ENCRYPT_AND_DECRYPT = Encrypt_and_Decrypt()
 # @click.command()
 
 # def get_chain():
@@ -67,10 +69,31 @@ def get_chain():
 
 
 @click.command()
-def create_keys():
+@click.option('--password', prompt='enter a password for your wallet', help='password protection for wallet')
+@click.option('--file_name', prompt='enter the filename that you want to save your keys in', help='file name for wallet')
+def create_keys(password, file_name):
 	""" pulls private key, password, and publickey """
 	wallet = Make_Keys.make_spend_view_receive_keys()
-	click.echo(f"\n \nPublic Key: {wallet['public spend key']}\n \nPrivate Key: {wallet['private spend key']}\n \nView key: {wallet['view key']}\n \nPrimary address: {wallet['primary address']}\n \nPassword For Wallet: {wallet['seed for wallet']}\n \nMessage: {wallet['message']}\n")
+	public_spend = wallet['public spend key']
+	private_spend = wallet['private spend key']
+	view_key = wallet['view key']
+	primary_address = wallet['primary address']
+	seed = wallet['seed for wallet']
+	key = password
+	file = ENCRYPT_AND_DECRYPT.write_to_file(file_name, data=f'public spend key: {public_spend} \n private spend key: {private_spend} \n view key: {view_key} \n primary address: {primary_address} \n wallet seed: {seed}')
+	encrypt_file = Encrypt_and_Decrypt.encrypt_file(password=key, file=file)
+	click.echo(f"\n \nPublic Key: {wallet['public spend key']}\n \nPrivate Key: {wallet['private spend key']}\n \nView key: {wallet['view key']}\n \nPrimary address: {wallet['primary address']}\n \nPassword For Wallet: {wallet['seed for wallet']}\n \nMessage: {wallet['message']}\n \n file containing wallet: {encrypt_file}")
+
+
+
+@click.command()
+@click.option('--password', prompt='password for wallet file', help='password for the wallet file')
+@click.option('--file_name', prompt='enter the file name that contains the encrypted wallet', help='file name for wallet')
+def decrypt_wallet(password, file_name):
+	""" decrypts the file containing your wallet """
+	key = password
+	decrypted_file = ENCRYPT_AND_DECRYPT.decrypt_file(password=key)
+	click.echo(decrypted_file)
 
 
 @click.command()
