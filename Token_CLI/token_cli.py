@@ -1,16 +1,21 @@
 import click
 from click.termui import prompt
 import requests as r
-from requests import api
+# from requests import api
 from tabulate import tabulate
 import time as t
-
+from Utilities.cryptography_testing import *
+# import sys
+# sys.path.insert(1, '/Wallet-App/Utilities')
+# from Utilities import cryptography_testing
+# from cryptography_testing import *
 #Constants
-SITE = 'https://token-network.herokuapp.com/'
+SITE = 'localhost:8000/'
 GET_CHAIN = f'{SITE}get_the_chain'
-MAKE_KEYS = f'{SITE}create_keys'
+# MAKE_KEYS = f'{SITE}create_keys'
 MINING = f'{SITE}mining'
 CHECK_BALANCE = f'{SITE}check_balance'
+MAKE_KEYS = Make_Keys()
 # @click.command()
 
 # def get_chain():
@@ -56,8 +61,8 @@ def get_chain():
 @click.command()
 def create_keys():
 	""" pulls private key, password, and publickey """
-	wallet = r.get(MAKE_KEYS).json()
-	click.echo(f"\n \nPublic Key: {wallet['publickey']}\n \nPrivate Key: {wallet['privatekey']}\n \nPassword For Wallet: {wallet['phrase']}\n \nMessage: {wallet['message']}\n")
+	wallet = Make_Keys.make_spend_view_receive_keys()
+	click.echo(f"\n \nPublic Key: {wallet['public spend key']}\n \nPrivate Key: {wallet['private spend key']}\n \nView key: {wallet['view key']}\n \nPrimary address: {wallet['primary address']}\n \nPassword For Wallet: {wallet['seed for wallet']}\n \nMessage: {wallet['message']}\n")
 
 
 @click.command()

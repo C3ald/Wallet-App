@@ -1,6 +1,6 @@
 from tkinter import *
-from Utilities.cryptography_testing import *
-from Utilities.encryption import Encrypt_and_Decrypt
+from Token_CLI.Utilities.cryptography_testing import *
+from Token_CLI.Utilities.encryption import Encrypt_and_Decrypt
 encrypt_and_decrypt = Encrypt_and_Decrypt()
 app = Tk()
 
@@ -14,7 +14,7 @@ app.geometry('300x300')
 
 hiLabel = Label(app, text='The GUI Wallet for Token')
 hiLabel.pack()
-
+data = None
 generate_wallet = Button(command=makekeys.make_spend_view_receive_keys(), text='click to make a wallet!')
 generate_wallet.pack()
 # menu = Menubutton(app, text='menu')
