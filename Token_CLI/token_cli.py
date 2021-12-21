@@ -8,6 +8,7 @@ from API.Utilities.cryptography_testing import *
 from API.main import app
 import uvicorn
 from API.Utilities.encryption import Encrypt_and_Decrypt
+import os
 # import sys
 # sys.path.insert(1, '/Wallet-App/Utilities')
 # from Utilities import cryptography_testing
@@ -73,26 +74,27 @@ def get_chain():
 @click.option('--file_name', prompt='enter the filename that you want to save your keys in', help='file name for wallet')
 def create_keys(password, file_name):
 	""" pulls private key, password, and publickey """
-	wallet = Make_Keys.make_spend_view_receive_keys()
+	wallet = Make_Keys().make_spend_view_receive_keys()
 	public_spend = wallet['public spend key']
 	private_spend = wallet['private spend key']
 	view_key = wallet['view key']
 	primary_address = wallet['primary address']
 	seed = wallet['seed for wallet']
 	key = password
-	file = ENCRYPT_AND_DECRYPT.write_to_file(file_name, data=f'public spend key: {public_spend} \n private spend key: {private_spend} \n view key: {view_key} \n primary address: {primary_address} \n wallet seed: {seed}')
-	encrypt_file = Encrypt_and_Decrypt.encrypt_file(password=key, file=file)
-	click.echo(f"\n \nPublic Key: {wallet['public spend key']}\n \nPrivate Key: {wallet['private spend key']}\n \nView key: {wallet['view key']}\n \nPrimary address: {wallet['primary address']}\n \nPassword For Wallet: {wallet['seed for wallet']}\n \nMessage: {wallet['message']}\n \n file containing wallet: {encrypt_file}")
+	file = ENCRYPT_AND_DECRYPT.write_to_file(file_name, data=f'public spend key: {public_spend} \nprivate spend key: {private_spend} \nview key: {view_key} \nprimary address: {primary_address} \nwallet seed: {seed}')
+	encrypt_file = ENCRYPT_AND_DECRYPT.encrypt_file(password=key, file=file)
+	os.remove(file)
+	click.echo(f"\n \nPublic Key: {wallet['public spend key']}\n \nPrivate Key: {wallet['private spend key']}\n \nView key: {wallet['view key']}\n \nPrimary address: {wallet['primary address']}\n \nSeed for wallet: {wallet['seed for wallet']} \n file containing wallet: {encrypt_file}")
 
 
 
 @click.command()
 @click.option('--password', prompt='password for wallet file', help='password for the wallet file')
-@click.option('--file_name', prompt='enter the file name that contains the encrypted wallet', help='file name for wallet')
+@click.option('--file_name', prompt='enter the file name that contains the encrypted wallet with .encrypted at the end', help='file name for wallet')
 def decrypt_wallet(password, file_name):
 	""" decrypts the file containing your wallet """
 	key = password
-	decrypted_file = ENCRYPT_AND_DECRYPT.decrypt_file(password=key)
+	decrypted_file = ENCRYPT_AND_DECRYPT.decrypt_file(password=key, encrypted_file=file_name)
 	click.echo(decrypted_file)
 
 
@@ -184,7 +186,7 @@ cli.add_command(mining)
 cli.add_command(check_balance)
 cli.add_command(start)
 cli.add_command(transaction)
-
+cli.add_command(decrypt_wallet)
 
 
 if __name__ == '__main__':
