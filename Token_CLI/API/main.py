@@ -1,7 +1,7 @@
 from starlette.responses import Response
 from passlib.hash import pbkdf2_sha256
 from starlette.websockets import WebSocketDisconnect
-from API.blockchain import Blockchain
+from Token_CLI.API.blockchain import Blockchain
 # from wallet import Wallet
 from fastapi import FastAPI, WebSocket
 import uvicorn
@@ -15,12 +15,13 @@ import asyncio
 import time as t
 import random
 import base64
+from sys import getsizeof
 # from Utilities.cryptography_testing import Make_Keys
 # from Utilities.cryptography_testing import primary_addresses
 # from Utilities.cryptography_testing import Check_Wallet_Balance
 # from Utilities.cryptography_testing import Ring_CT
 # from Utilities.cryptography_testing import Decoy_addresses
-from API.Utilities.cryptography_testing import *
+from Token_CLI.API.Utilities.cryptography_testing import *
 ring_ct = Ring_CT()
 checkbalance = Check_Wallet_Balance()
 create_keys = Make_Keys()
@@ -82,7 +83,7 @@ blockchain = Blockchain()
 class Transaction(BaseModel):
     sender_publickey: str
     sender_privatekey: str
-    sender_public_viewkey: str
+    sender_publicview_key: str
     receiver: str
     amount: float
 
@@ -105,7 +106,7 @@ class Passphrase(BaseModel):
 
 
 class Blockchain(BaseModel):
-    blockchain: list
+    block: dict
 
 
 class Recover(BaseModel):
@@ -267,14 +268,14 @@ async def add_transaction(transaction: EncryptedTransaction):
 async def add_unconfirmed_transaction(transaction: Transaction):
     """ broadcasts transactions to all nodes to be verified by miners"""
     verify = checkbalance.verify_keys(publickey=transaction.sender_publickey, privatekey=transaction.sender_privatekey)
-    verify2 = checkbalance.verify_keys(publickey=transaction.sender_public_viewkey, privatekey=transaction.sender_privatekey)
+    verify2 = checkbalance.verify_keys(publickey=transaction.sender_publicview_key, privatekey=transaction.sender_privatekey)
     if verify == True and verify2 == True:
-        balance = checkbalance.balance_check(primary_address=transaction.sender_public_viewkey, blockchain=blockchain.chain)
+        balance = checkbalance.balance_check(primary_address=transaction.sender_publicview_key, blockchain=blockchain.chain)
         amount = algs.network_fee(amount=transaction.amount)
         new_balance = balance ['balance']- amount
         if new_balance > 0:
             receiver = transaction.receiver
-            sender = primary_addr.make_primary_address(public_view=transaction.sender_public_viewkey)
+            sender = primary_addr.make_primary_address(public_view=transaction.sender_publicview_key)
             sender_key = create_keys.make_stealth_keys(primary_address=sender)
             receiver_key = create_keys.make_stealth_keys(primary_address=receiver)
             blockchain.add_unconfirmed_transaction(sender=sender_key, receiver=receiver_key, amount=amount)
@@ -283,7 +284,7 @@ async def add_unconfirmed_transaction(transaction: Transaction):
             result = 'invalid balance'
     else:
         result = 'invalid keys'
-    return {'message':result}
+    return result
     # if verify == True:
     #     wallets.checkbalance(chain=blockchain.chain, viewkey=transaction.sender_privatekey)
     #     balance_check = wallets.balance
@@ -425,12 +426,15 @@ async def check_balance(wallet:Wallet_public):
     return {'Address': balance['receive address'], 'balance': f'{balance["balance"]}Tokens'}
 
 
-@app.post('/insert_chain', tags=['nodes'])
+@app.post('/insert_block', tags=['nodes'])
 async def insert_chain(chain:Blockchain):
     """ replace the chain if all nodes are down or if node has a 
     firewall preventing get requests from web servers """
-    updated_chain = blockchain.update_chain(new_chain=chain.blockchain)
-    return updated_chain
+    if getsizeof(chain.block) < 1048576 or getsizeof(chain.block) == 1048576:
+        updated_chain = blockchain.update_chain(new_chain=chain.block)
+        return updated_chain
+    else:
+        return 'block is too large!!'
     # if is_valid == True:
     #     blockchain.chain
     #     return chain

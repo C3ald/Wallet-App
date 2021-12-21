@@ -8,7 +8,7 @@ import requests as r
 import random 
 from passlib.hash import pbkdf2_sha256
 import base64
-from API.Utilities.cryptography_testing import *
+from Token_CLI.API.Utilities.cryptography_testing import *
 from tinydb import TinyDB, Query
 #git add .
 #git commit -m "Message"
@@ -29,6 +29,7 @@ class Blockchain:
         if len(self.read_data(NODES)) > len(self.nodes):
             self.nodes = self.read_data(NODES)
         else:
+            self.read_data(NODES)
             self.nodes = []
         self.unconfirmed_transactions = self.read_data(UNconfirmed_transactions)
         self.unconfirmed_transactions = self.add_data(data=[], DataBase=UNconfirmed_transactions)
@@ -93,7 +94,7 @@ class Blockchain:
         self.transactions = []
         self.chain.append(block)
         self.add_data(data=self.chain, DataBase=DB)
-        self.post_chain()
+        self.post_chain(block)
         return block
     
 
@@ -103,18 +104,20 @@ class Blockchain:
     
 
 
-    def post_chain(self):
+    def post_chain(self, block):
         """ sends the new chain to all nodes """
         for node in self.nodes:
-            chain = self.read_data(DB)
+            chain = block
             json = {'blockchain':chain}
-            url = r.post(f'http://{node}/insert_chain', json)
+            url = r.post(f'http://{node}/insert_block', json)
             url_status = url.status_code
-            print(f"http://{node}/insert_chain   {url_status}")
+            print(f"http://{node}/insert_block \n{url_status}")
         return 'chain is updated among all nodes'
 
-    def update_chain(self, new_chain:list):
+    def update_chain(self, block:dict):
         """ Updates the chain """
+        new_chain = self.chain
+        new_chain.append(block)
         if len(new_chain) > len(self.chain):
             valid = self.is_chain_valid(chain=new_chain)
             if valid == True:
@@ -421,5 +424,3 @@ class Blockchain:
         else:
             return {'message': 'No nodes found in node.'}
         # self.transactions = self.transactions.append(updated_transactions)
-if __name__ == '__main__':
-    Blockchain()
