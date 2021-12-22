@@ -9,6 +9,8 @@ from API.main import app
 import uvicorn
 from API.Utilities.encryption import Encrypt_and_Decrypt
 import os
+# import asyncio
+from subprocess import run
 # import sys
 # sys.path.insert(1, '/Wallet-App/Utilities')
 # from Utilities import cryptography_testing
@@ -35,6 +37,8 @@ ENCRYPT_AND_DECRYPT = Encrypt_and_Decrypt()
 # 	click.echo(chain)
 
 
+def run_app():
+	uvicorn.run(app, host=SERVER_HOST, port=SERVER_PORT, reload=SERVER_RELOAD)
 
 
 @click.group()
@@ -176,7 +180,7 @@ def add_node(node):
 def start(start):
 	'starts the node'
 	if start == 'Y' or start == 'y':
-		uvicorn.run('token_cli:app', host=SERVER_HOST, port=SERVER_PORT, reload=SERVER_RELOAD)
+		run_app()
 		return 'Node has been started!'
 	elif start == 'n' or start == 'N':
 		return 'Node was not started!'
