@@ -50,7 +50,7 @@ class Algs():
 			test = r.get(f'http://{node}/get_the_chain')
 			if test.status_code == 200:
 				number_of_nodes = number_of_nodes + 1
-		if number_of_nodes != 0 and number_of_nodes % 1000 == 0:
+		if number_of_nodes != 0 and number_of_nodes % 10000 == 0:
 			interval = number_of_nodes / 1000
 			self.amount = self.amount / interval
 		# if len(chain) > 1999:
