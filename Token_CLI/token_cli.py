@@ -20,7 +20,7 @@ SERVER_NAME = 'Token Network'
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 8000
 SERVER_RELOAD = False
-SITE = f'{SERVER_HOST}:{SERVER_PORT}'
+SITE = 'http://localhost:8000/'
 GET_CHAIN = f'{SITE}get_the_chain'
 # MAKE_KEYS = f'{SITE}create_keys'
 MINING = f'{SITE}mining'
@@ -123,19 +123,20 @@ def check_balance(viewkey):
 def mining(primary_address):
 	""" mines blocks """
 	stop = False
-	data = {'publickey':primary_address}
+	data = {'address':primary_address}
 	request = r.post(MINING, json=data)
 	if request.status_code == 200:
 		while stop == False:
-			t.sleep(1.0)
+			t.sleep(0.5)
 			request = r.post(MINING, json=data)
 			table = []
-			for re in request['message']:
-				index = re['index']
-				timestamp = re['timestamp']
-				reward = re['amount'[primary_address]]
-				data = [index, timestamp, reward]
-				table.append(data)
+			re = request.json()['message']
+			index = re['index']
+			timestamp = re['timestamp']
+			previous_hash = re['previous_hash']
+				# reward = re['amount']
+			table_data = [index, previous_hash, timestamp]
+			table.append(table_data)
 			click.echo(tabulate(table))
 	else:
 		return 'node must be down or invalid! (make sure your node has started)'
