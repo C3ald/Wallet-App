@@ -152,10 +152,10 @@ def mining(primary_address):
 @click.option('--amount', prompt='how many tokens would you like to send', help='provide the number of Tokens you want to send')
 def transaction(public_spend_key, private_spend_key, view_key, receiver, amount):
 	""" Makes transactions """
-	data = {'sender_publickey': public_spend_key, 'sender_privatekey': private_spend_key, 'sender_public_viewkey': view_key, 'receiver': receiver, 'amount': amount}
+	data = {'sender_publickey': public_spend_key, 'sender_privatekey': private_spend_key, 'sender_publicview_key': view_key, 'receiver': receiver, 'amount': amount}
 	request = r.post(TRANSACTIONS, json=data)
 	if request.status_code == 200:
-		response = request['message']
+		response = request.json()['message']
 	else:
 		response = 'error, invalid response! (make sure your node has started)'
 	click.echo(response)
@@ -173,6 +173,7 @@ def add_node(node):
 		response = 'node added successfully!'
 	else:
 		response = 'error, invalid response! (make sure your node has started)'
+	click.echo(response)
 
 
 
@@ -181,6 +182,7 @@ def add_node(node):
 def start(start):
 	'starts the node'
 	if start == 'Y' or start == 'y':
+		print('open a new terminal to use other cli functions')
 		run_app()
 		return 'Node has been started!'
 	elif start == 'n' or start == 'N':
