@@ -39,6 +39,7 @@ class Algs():
 		# chain_index = 0
 		self.list_count = ['0']
 		number_of_nodes = 0
+		interval = 0
 		self.amount = self.amount_change(chain=chain)
 		for block in chain:
 			index = block['index']
@@ -53,7 +54,8 @@ class Algs():
 		for x in range(number_of_nodes):
 			if number_of_nodes != 0 and x % 100000 == 0:
 				interval = interval+ 1.001
-		self.amount = self.amount / interval
+		if interval != 0:
+			self.amount = self.amount / interval
 		# if len(chain) > 1999:
 		# 	while chain_index != len(chain):
 		# 		if chain[i]['index'] % 2000 == 0:

@@ -39,6 +39,7 @@ class Algs():
 		# chain_index = 0
 		self.list_count = ['0']
 		number_of_nodes = 0
+		interval = 0
 		self.amount = self.amount_change(chain=chain)
 		for block in chain:
 			index = block['index']
@@ -50,8 +51,10 @@ class Algs():
 			test = r.get(f'http://{node}/get_the_chain')
 			if test.status_code == 200:
 				number_of_nodes = number_of_nodes + 1
-		if number_of_nodes != 0 and number_of_nodes % 10000 == 0:
-			interval = number_of_nodes / 1000
+		for x in range(number_of_nodes):
+			if number_of_nodes != 0 and x % 100000 == 0:
+				interval = interval+ 1.001
+		if interval != 0:
 			self.amount = self.amount / interval
 		# if len(chain) > 1999:
 		# 	while chain_index != len(chain):
@@ -110,6 +113,7 @@ class Algs():
 			new_amount = 100
 		self.amount = new_amount
 		return self.amount
+	
 algs = Algs()
 class Ring_CT():
 	""" Ring signatures """

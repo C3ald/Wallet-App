@@ -8,7 +8,7 @@ import requests as r
 import random 
 from passlib.hash import pbkdf2_sha256
 import base64
-from API.Utilities.cryptography_testing import *
+from Utilities.cryptography_testing import *
 from tinydb import TinyDB, Query
 #git add .
 #git commit -m "Message"
@@ -50,7 +50,7 @@ class Blockchain:
     def add_data(self, data, DataBase):
         """ This adds data """
         # data = self.chain
-        print(type(data))
+        # print(type(data))
         DataBase.truncate()
         for item in data:
             DataBase.insert(item)
@@ -132,14 +132,18 @@ class Blockchain:
         new_proof = 1
         check_proof = False
         algs.difficulty_increase(chain=self.chain, nodes=self.nodes)
+        chain = self.chain
         while check_proof is False:
-            
-            hash_op = hashlib.sha256(str(new_proof**2 -
-             previous_proof**2).encode()).hexdigest()
-            if hash_op[:algs.count] == algs.difficulty:
-                check_proof = True
+            if chain == self.chain:
+                hash_op = hashlib.sha256(str(new_proof**2 -
+                previous_proof**2).encode()).hexdigest()
+                if hash_op[:algs.count] == algs.difficulty:
+                    check_proof = True
+                else:
+                    new_proof += 1
             else:
-                new_proof += 1
+                check_proof = False
+                break
         return new_proof 
 
     def add_false_transactions(self):
@@ -209,13 +213,8 @@ class Blockchain:
             for transaction in self.unconfirmed_transactions:
                 
 
-                # self.new_transactions.append({'sender': sender_sign, })
+                
                 self.transactions.append(transaction)
-            # self.transactions = self.unconfirmed_transactions
-            # if len(self.nodes) > 1:
-                # for node in self.nodes:
-                #     for transaction in self.transactions:
-                #         r.post(f'https://{node}/add_transaction/', json=transaction)
             self.unconfirmed_transactions = []
         self.add_data(data=self.unconfirmed_transactions, DataBase=UNconfirmed_transactions)
         previous_block = self.get_prev_block()
@@ -234,8 +233,6 @@ class Blockchain:
             }
         )
         else:
-            # for transaction in self.unconfirmed_transactions:
-            # self.transactions = self.unconfirmed_transactions
             if len(self.nodes) > 1:
                 for node in self.nodes:
                     for transaction in self.unconfirmed_transactions:
@@ -257,15 +254,6 @@ class Blockchain:
 
     def add_node(self, address):
         """ This method adds a node to the network """
-        # test = r.get(f'http://{address}/')
-        # parsed_url = address
-        # if test.status_code == 200:
-        #     self.nodes.append(parsed_url)
-        #     self.nodes = set(self.nodes)
-        #     self.nodes = list(self.nodes)
-        #     print(self.nodes)
-        # else:
-        #     return('invalid ip address/url')
         test = r.get(f'http://{address}/get_the_chain')
         if test.status_code == 200:
             for node in self.nodes:
@@ -282,7 +270,6 @@ class Blockchain:
         else:
             return {'message': 'invalid node address!'}
 
-        #algorithm for p2p
         """
         Get the chain and validity of the chain among the nodes
         Find the blockchain with the greatest length and replace the other chains
@@ -301,8 +288,6 @@ class Blockchain:
                 print(f'https://{node}/get_the_chain')
                 response = r.get(f'https://{node}/get_the_chain')
                 if response.status_code==200:
-                    # length = json.loads(response.text)
-                    # length = length['length']
                     length = response.json()['length']
                     chain = response.json()['blockchain']
                     if length > max_length and self.is_chain_valid(chain=chain):

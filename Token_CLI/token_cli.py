@@ -163,8 +163,8 @@ def transaction(public_spend_key, private_spend_key, view_key, receiver, amount)
 
 
 
-click.command()
-click.option('--node', prompt='enter the url for the node you want to add without https:// or without http://', help='add a node')
+@click.command()
+@click.option('--node', prompt='enter the url for the node you want to add without https:// or without http://', help='add a node')
 def add_node(node):
 	""" add a node """
 	data = {'node': node}
