@@ -11,6 +11,7 @@ from API.Utilities.encryption import Encrypt_and_Decrypt
 import os
 # import asyncio
 from subprocess import run
+import threading
 # import sys
 # sys.path.insert(1, '/Wallet-App/Utilities')
 # from Utilities import cryptography_testing
@@ -37,8 +38,11 @@ ENCRYPT_AND_DECRYPT = Encrypt_and_Decrypt()
 # 	click.echo(chain)
 
 
-def run_app():
-	uvicorn.run(app, host=SERVER_HOST, port=SERVER_PORT, reload=SERVER_RELOAD)
+def run_app(ip, port):
+	new_thread = threading.Thread(target=uvicorn.run(app, host=ip, port=port, reload=SERVER_RELOAD))
+	new_thread.start()
+	
+
 
 
 @click.group()
@@ -179,11 +183,13 @@ def add_node(node):
 
 @click.command()
 @click.option('--start', prompt='would you like to start the node (Y/n)', help='Starts the Node')
-def start(start):
+@click.option('--ip', prompt='what ip do you want to run the node on, ', help='ip that you want to run the node on')
+@click.option('--port', prompt='what port do you want to run the node on, ', help='port that you want to run node')
+def start(start, ip, port):
 	'starts the node'
 	if start == 'Y' or start == 'y':
 		print('open a new terminal to use other cli functions')
-		run_app()
+		run_app(ip, int(port))
 		return 'Node has been started!'
 	elif start == 'n' or start == 'N':
 		return 'Node was not started!'
