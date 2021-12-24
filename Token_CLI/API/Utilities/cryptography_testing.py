@@ -292,8 +292,8 @@ class Check_Wallet_Balance():
 					for receiver in receivers:
 						amount = transaction['amount']
 						verify_wallet = self.verify_stealth_keys(receiver, primary_address)
-						verify2 = self.signiture_check(address=primary_address, signature=receiver_signature)
-						if verify_wallet == True and verify2 == True:
+						# verify2 = self.signiture_check(address=primary_address, signature=receiver_signature)
+						if verify_wallet == True:
 							verify_double_spend = self.double_spend_check(stealth_key=receiver, chain=blockchain)
 							if verify_double_spend == False:
 								balance = balance + amount
@@ -349,14 +349,16 @@ class Check_Wallet_Balance():
 
 
 	def signiture_check(self,address, signature):
-		salt = '\xef\x94\x06r\x05\xb6M\xa0\x85\x9e\x17k\x8a;v\xa7\x91v\x19l!\xf6&vo\xd1l\xe1X\x05\xe7\x98'
-		salt = bytes(salt.encode())
-		encoded_address = bytes(address.encode())
-		salted_address = encoded_address + salt
-		valid = self.verify_keys(publickey=signature, privatekey=salted_address)
+		hashedAddress = self.sign_transactions(address)
+		valid = self.verify_keys(publickey=signature, privatekey=hashedAddress)
 		return valid
 
-
+	def sign_transactions(self, address):
+		salt = b'\xef\x94\x06r\x05\xb6M\xa0\x85\x9e\x17k\x8a;v\xa7\x91v\x19l!\xf6&vo\xd1l\xe1X\x05\xe7\x98'
+		encodedAddress = bytes(address.encode())
+		hashedAddress = hashlib.scrypt(encodedAddress, salt=salt, n=4, r=7, p=10).hex()
+		hashedAddress = hashlib.sha256(hashedAddress).hexdigest()
+		return hashedAddress
 
 class Decoy_addresses():
 	def __init__(self):

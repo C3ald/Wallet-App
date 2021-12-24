@@ -2,7 +2,7 @@ import hashlib
 import datetime
 import json
 from urllib.parse import urlparse
-from uuid import uuid4
+from uuid import uuid1, uuid4
 import requests as r
 # from Utilities.algorithms import Algs
 import random 
@@ -126,6 +126,7 @@ class Blockchain:
         new_chain.append(block)
         if len(new_chain) > len(self.chain):
             valid = self.is_chain_valid(chain=new_chain)
+            self.checkTransactions(block)
             if valid == True:
                 self.add_data(data=self.chain)
                 self.chain = new_chain
@@ -197,7 +198,7 @@ class Blockchain:
         transaction = self.signTransaction(hashed_sender, hashed_receiver)
         signsender = transaction['signature of sender']
         signreceiver = transaction['signature of receiver']
-        self.transactions.append({'sender': hashed_sender,'amount': amount, 'receiver':hashed_receiver, 'sender signature': signsender, 'receiver signature': signreceiver})
+        self.transactions.append({'sender': hashed_sender,'amount': amount, 'receiver':hashed_receiver, 'sender signature': signsender, 'receiver signature': signreceiver, 'id': uuid1().hex})
         previous_block = self.get_prev_block()
         return previous_block['index'] + 1
     
@@ -214,9 +215,51 @@ class Blockchain:
             
     #     else:
     #         for transaction in self.unconfirmed_transactions:
-                
 
-                
+    def checkTransactions(self, block):
+        """ checks if transaction is in new block """
+        for transaction in block['data']:
+            verify1 = self.equals(transaction)
+            verify2 = self.signaturecheck(transaction)
+            if verify1 == True and verify2 == True:
+                self.unconfirmed_transactions.pop(transaction)
+        #         return True
+        # return False
+
+
+
+    def equals(self, transaction):
+        """ checks for repeat ids """
+        for uncontransaction in self.unconfirmed_transactions:
+            transactionID = transaction.id
+            unconfirmedtransactionID = uncontransaction.id
+            if transactionID == unconfirmedtransactionID:
+                return True
+        return False
+
+    def signaturecheck(self, transaction):
+        for uncontransaction in self.unconfirmed_transactions:
+            transactionsignsender = transaction['signature of sender']
+            unconsignature = uncontransaction['signature of sender']
+            if transactionsignsender == unconsignature:
+                return True
+        return False
+
+
+
+
+    # def checkIfTransactionIsInBlockSenderSignature(self, block):
+    #     """ checks if transaction is already in block to prevent double spending """
+    #     for transaction in self.unconfirmed_transactions:
+    #         blockTransactions = block['data']
+    #         for blockTransaction in blockTransactions:
+    #             address = transaction['sender view key']
+    #             primaddress = primary_addresses().make_primary_address(address)
+    #             verifykey = Check_Wallet_Balance().verify_stealth_keys(stealth_key=blockTransaction, primary_address=primaddress)
+    #             if verifykey != True:
+    #                 return False
+
+
     #             self.transactions.append(transaction)
     #         self.unconfirmed_transactions = []
     #     self.add_data(data=self.unconfirmed_transactions, DataBase=UNconfirmed_transactions)
@@ -234,12 +277,19 @@ class Blockchain:
     """ to prevent loops in the network when adding transactions """
     def add_unconfirmed_transaction(self, senderprivatekey:str, senderviewkey:str, sendersendpublickey, receiver, amount:float):
         """ This is used to send or exchange currencies """
+        addressofsender = primary_addresses().make_primary_address(senderviewkey)
+        signature = self.signTransaction(addressofsender, receiver)
+        signatureofsender = signature['signature of sender']
+        # signatureofreceiver = signature['signature of receiver']
         unconfirmedTransaction = {
             'sender send publickey':sendersendpublickey, 
         'sender send privatekey': senderprivatekey, 
         'sender address': senderviewkey, 
         'receiver': receiver,
-        'amount': amount}
+        'amount': amount,
+        'signature of sender': signatureofsender,
+        'id': uuid1().hex
+        }
         self.unconfirmed_transactions.append(unconfirmedTransaction)
         self.unconfirmed_transactions = set(self,unconfirmedTransaction)
         self.add_unconfirmed_transaction = list(self.unconfirmed_transactions)
@@ -282,26 +332,26 @@ class Blockchain:
         if verify1 == True and verify2 == True and newBalance >= 0:
             hashed_sender = str(pbkdf2_sha256.hash(address))
             hashed_receiver = str(pbkdf2_sha256.hash(receiver))
-            signatures = self.signTransaction(senderviewkey, receiver)
-            senderSign = signatures['signature of sender']
-            receiverSign = signatures['signature of receiver']
-            verifiedTransaction = {'sender': hashed_sender, 'amount': amount, 'receiver': hashed_receiver, 'sender signature': senderSign, 'receiver signature': receiverSign}
+            senderSign = transaction['signature of sender']
+            # receiverSign = transaction['signature of receiver']
+            verifiedTransaction = {'sender': hashed_sender, 'amount': amount, 'receiver': hashed_receiver, 'sender signature': senderSign}
             return verifiedTransaction
 
 
-    def signTransaction(self, sender:str, receiver:str):
+    def signTransaction(self, sender:str):
         """ signs transactions """
-        salt = '\xef\x94\x06r\x05\xb6M\xa0\x85\x9e\x17k\x8a;v\xa7\x91v\x19l!\xf6&vo\xd1l\xe1X\x05\xe7\x98'
-        salt = bytes(salt.encode())
+        salt = b'\xef\x94\x06r\x05\xb6M\xa0\x85\x9e\x17k\x8a;v\xa7\x91v\x19l!\xf6&vo\xd1l\xe1X\x05\xe7\x98'
         encodedSender = bytes(sender.encode())
-        encodedReceiver = bytes(receiver.encode())
-        saltedSender = encodedSender + salt
-        saltedReceiver = encodedReceiver + salt
-        shaSender = str(pbkdf2_sha256.hash(saltedSender.decode()))
-        shaReceiver = str(pbkdf2_sha256.hash(saltedReceiver.decode()))
+        # encodedReceiver = bytes(receiver.encode())
+        hashedsender = hashlib.scrypt(encodedSender, salt=salt, n=4, r=7, p=10).hex()
+        # hashedreceiver = hashlib.scrypt(encodedReceiver, salt=salt, n=4, r=7, p=10).hex()
+        hashedsender = hashlib.sha256(hashedsender).hexdigest()
+        # hashedreceiver = hashlib.sha256(hashedreceiver).hexdigest()
+        shaSender = str(pbkdf2_sha256.hash(hashedsender))
+        # shaReceiver = str(pbkdf2_sha256.hash(hashedreceiver))
         shaSender = shaSender.replace('$pbkdf2-sha256$29000$', '')
-        shaReceiver = shaReceiver.replace('$pbkdf2-sha256$29000$', '')
-        signatures = {'signature of sender': shaSender, 'signature of receiver': shaReceiver}
+        # shaReceiver = shaReceiver.replace('$pbkdf2-sha256$29000$', '')
+        signatures = {'signature of sender': shaSender}
         return signatures
 
     #P2p nodes
