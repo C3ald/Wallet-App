@@ -288,10 +288,12 @@ class Check_Wallet_Balance():
 				transactions = blockchain[i]['data']
 				for transaction in transactions:
 					receivers = transaction['receiver']
+					receiver_signature = transaction['receiver signature']
 					for receiver in receivers:
 						amount = transaction['amount']
 						verify_wallet = self.verify_stealth_keys(receiver, primary_address)
-						if verify_wallet == True:
+						verify2 = self.signiture_check(address=primary_address, signature=receiver_signature)
+						if verify_wallet == True and verify2 == True:
 							verify_double_spend = self.double_spend_check(stealth_key=receiver, chain=blockchain)
 							if verify_double_spend == False:
 								balance = balance + amount
@@ -307,10 +309,12 @@ class Check_Wallet_Balance():
 				transactions = blockchain[i]['data']
 				for transaction in transactions:
 					senders = transaction['sender']
+					sender_signature = transaction['sender signature']
 					for sender in senders:
 						amount = transaction['amount']
 						verify_wallet = self.verify_stealth_keys(sender, sender_receive_key)
-						if verify_wallet == True:
+						verify2 = self.signiture_check(address=sender_receive_key, signature=sender_signature)
+						if verify_wallet == True and verify2 == True:
 							verify_double_spend = self.double_spend_check(stealth_key=sender, chain=blockchain)
 							if verify_double_spend == False:
 								balance = balance + amount
@@ -342,6 +346,15 @@ class Check_Wallet_Balance():
 		verify = pbkdf2_sha256.verify(privatekey, full_publickey)
 		return verify
 
+
+
+	def signiture_check(self,address, signature):
+		salt = '\xef\x94\x06r\x05\xb6M\xa0\x85\x9e\x17k\x8a;v\xa7\x91v\x19l!\xf6&vo\xd1l\xe1X\x05\xe7\x98'
+		salt = bytes(salt.encode())
+		encoded_address = bytes(address.encode())
+		salted_address = encoded_address + salt
+		valid = self.verify_keys(publickey=signature, privatekey=salted_address)
+		return valid
 
 
 

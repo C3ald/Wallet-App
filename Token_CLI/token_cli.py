@@ -182,19 +182,14 @@ def add_node(node):
 
 
 @click.command()
-@click.option('--start', prompt='would you like to start the node (Y/n)', help='Starts the Node')
+# @click.option('--start', prompt='would you like to start the node (Y/n)', help='Starts the Node')
 @click.option('--ip', prompt='what ip do you want to run the node on, ', help='ip that you want to run the node on')
 @click.option('--port', prompt='what port do you want to run the node on, ', help='port that you want to run node')
-def start(start, ip, port):
+def start(ip, port):
 	'starts the node'
-	if start == 'Y' or start == 'y':
-		print('open a new terminal to use other cli functions')
-		run_app(ip, int(port))
-		return 'Node has been started!'
-	elif start == 'n' or start == 'N':
-		return 'Node was not started!'
-	else:
-		return 'Invalid response, node was not started!'
+	print('open a new terminal to use other cli functions')
+	run_app(ip, int(port))
+
 
 cli.add_command(get_chain)
 cli.add_command(create_keys)

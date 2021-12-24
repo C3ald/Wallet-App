@@ -1,7 +1,7 @@
 from starlette.responses import Response
 from passlib.hash import pbkdf2_sha256
 from starlette.websockets import WebSocketDisconnect
-from blockchain import Blockchain
+from API.blockchain import Blockchain
 # from wallet import Wallet
 from fastapi import FastAPI, WebSocket
 import uvicorn
@@ -21,7 +21,7 @@ from sys import getsizeof
 # from Utilities.cryptography_testing import Check_Wallet_Balance
 # from Utilities.cryptography_testing import Ring_CT
 # from Utilities.cryptography_testing import Decoy_addresses
-from Utilities.cryptography_testing import *
+from API.Utilities.cryptography_testing import *
 from fastapi_signals import *
 ring_ct = Ring_CT()
 checkbalance = Check_Wallet_Balance()
@@ -82,9 +82,9 @@ blockchain = Blockchain()
 
 
 class Transaction(BaseModel):
-    sender_publickey: str
-    sender_privatekey: str
-    sender_publicview_key: str
+    sender_public_send_key: str
+    sender_private_send_key: str
+    sender_view_key: str
     receiver: str
     amount: float
 
@@ -145,12 +145,9 @@ async def mine(keys:Mining):
         # add data
     amount = algs.amount_change(chain=blockchain.chain)
         # stealth_key = pbkdf2_sha256.hash(str(keys.publickey))
-    sender = decoy_addresses.decoy_keys()['publickey']
-    transaction = blockchain.add_miner_transaction(sender=sender, receiver=keys.address, amount=amount)
-        #decoy transactions
     # decoy = decoy_addresses.decoy_transactions(amount)
         # create block
-    create_block = blockchain.create_block(proof=proof, previous_hash=prev_hash)
+    blockchain.create_block(proof=proof, previous_hash=prev_hash, forger=keys.address)
         #returns the last block in the chain
     return {'message': blockchain.chain[-1]}
     # else:
@@ -169,13 +166,20 @@ async def is_valid():
 
 
 @app.post("/add_transaction/", tags=['transaction'])
-async def add_transaction(transaction: EncryptedTransaction):
-    """ Allows transactions to be added to the chain"""
-    sender = transaction.sender_publickey
+async def add_transaction(transaction: Transaction):
+    """ Allows transactions to be added to the chain from nodes"""
+    senderpublicsendkey = transaction.sender_public_send_key
+    senderprivatesendkey = transaction.sender_private_send_key
+    senderviewkey = transaction.sender_view_key
     receiver = transaction.receiver
-    sender = str(base64.decodebytes(sender).decode())
-    receiver = str(base64.decodebytes(receiver).decode())
-    result = blockchain.add_non_miner_transaction(sender=sender, receiver=receiver, amount=transaction.amount)
+    amount = transaction.amount
+    new_transaction = blockchain.add_unconfirmed_transaction(senderprivatekey=senderprivatesendkey, 
+    sendersendpublickey=senderpublicsendkey, 
+    receiver=receiver, 
+    senderviewkey=senderviewkey, 
+    amount=amount)
+    blockchain.broadcast_transaction(transaction=new_transaction)
+    result = 'transaction has been added and is awaiting verification'
     return result
 
 
@@ -187,23 +191,18 @@ async def add_transaction(transaction: EncryptedTransaction):
 @app.post('/add_unconfirmed_transaction', tags=['transaction'])
 async def add_unconfirmed_transaction(transaction: Transaction):
     """ broadcasts transactions to all nodes to be verified by miners"""
-    verify = checkbalance.verify_keys(publickey=transaction.sender_publickey, privatekey=transaction.sender_privatekey)
-    verify2 = checkbalance.verify_keys(publickey=transaction.sender_publicview_key, privatekey=transaction.sender_privatekey)
-    if verify == True and verify2 == True:
-        balance = checkbalance.balance_check(primary_address=transaction.sender_publicview_key, blockchain=blockchain.chain)
-        amount = algs.network_fee(amount=transaction.amount)
-        new_balance = balance ['balance']- amount
-        if new_balance > 0:
-            receiver = transaction.receiver
-            sender = primary_addr.make_primary_address(public_view=transaction.sender_publicview_key)
-            sender_key = create_keys.make_stealth_keys(primary_address=sender)
-            receiver_key = create_keys.make_stealth_keys(primary_address=receiver)
-            blockchain.add_unconfirmed_transaction(sender=sender_key, receiver=receiver_key, amount=amount)
-            result = 'transaction was successful'
-        else:
-            result = 'invalid balance'
-    else:
-        result = 'invalid keys'
+    senderpublicsendkey = transaction.sender_public_send_key
+    senderprivatesendkey = transaction.sender_private_send_key
+    senderviewkey = transaction.sender_view_key
+    receiver = transaction.receiver
+    amount = transaction.amount
+    new_transaction = blockchain.add_unconfirmed_transaction(senderprivatekey=senderprivatesendkey, 
+    sendersendpublickey=senderpublicsendkey, 
+    receiver=receiver, 
+    senderviewkey=senderviewkey, 
+    amount=amount)
+    blockchain.broadcast_transaction(transaction=new_transaction)
+    result = 'transaction has been added and is awaiting verification'
     return result
 
 """ Wallets should be made offline. """
