@@ -7,17 +7,31 @@ from API.main import app
 import uvicorn
 import multiprocessing
 import time as t
+import subprocess
 
 encrypt_and_decrypt = Encrypt_and_Decrypt()
+
+
+class ButtonCommands():
+	def __init__(self):
+		pass
+
+	def openWallet(self):
+		subprocess.Popen(r'explorer /select, "C:\"')
+
+
 class Window(Frame):
 	def __init__(self, master=None):
 		Frame.__init__(self, master)
 		self.master = master
+		self.pack(fill=BOTH, expand=1)
+		openwalletButton = Button(self, text='locate wallet', command=ButtonCommands().openWallet)
+		openwalletButton.place(x=0, y=0)
 
 root = Tk()
 guiapp = Window(root)
 root.wm_title('Token GUI Wallet')
-
+root.geometry('640x400')
 
 
 def startAPI():
@@ -27,7 +41,16 @@ def startGUI():
 	root.mainloop()
 
 # def stopProcesses():
-	
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
 	GUI = multiprocessing.Process(name='GUI', target=startGUI)
