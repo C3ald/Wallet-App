@@ -15,7 +15,7 @@ class Window(Frame):
 		self.master = master
 
 root = Tk()
-app = Window(root)
+guiapp = Window(root)
 root.wm_title('Token GUI Wallet')
 
 
