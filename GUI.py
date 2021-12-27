@@ -35,7 +35,7 @@ if __name__ == '__main__':
 	API = multiprocessing.Process(name='API',target=startAPI)
 	API.start()
 	while True:
-		if GUI.is_alive() == True or API.is_alive() == True:
+		if GUI.is_alive() == True and API.is_alive() == True:
 			pass
 		
 		if GUI.is_alive() == False:
