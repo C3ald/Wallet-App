@@ -128,18 +128,21 @@ def mining(primary_address):
 	""" mines blocks """
 	stop = False
 	data = {'address':primary_address}
-	request = r.post(MINING, json=data)
+	request = r.get(GET_CHAIN)
 	if request.status_code == 200:
 		while stop == False:
 			t.sleep(0.5)
 			request = r.post(MINING, json=data)
 			table = []
 			re = request.json()['message']
-			index = re['index']
-			timestamp = re['timestamp']
-			previous_hash = re['previous_hash']
+			if type(re) == dict:
+				index = re['index']
+				timestamp = re['timestamp']
+				previous_hash = re['previous_hash']
 				# reward = re['amount']
-			table_data = [index, previous_hash, timestamp]
+				table_data = [index, previous_hash, timestamp]
+			else:
+				table_data = [re]
 			table.append(table_data)
 			click.echo(tabulate(table))
 	else:
