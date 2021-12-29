@@ -17,7 +17,7 @@ class ButtonCommands():
 		pass
 
 	def openWallet(self):
-		subprocess.Popen(r'explorer /select, "C:\"')
+		subprocess.Popen(r'explorer /select, "\"')
 
 
 class Window(Frame):
