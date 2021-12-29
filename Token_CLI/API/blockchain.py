@@ -22,6 +22,7 @@ NODES = TinyDB('nodes.json')
 UNconfirmed_transactions = TinyDB('unconfirmed_transactions.json')
 signatures = Signatures()
 
+
 class Blockchain:
     """ the blockchain class """
 
@@ -136,7 +137,7 @@ class Blockchain:
         """ Updates the chain """
         lengthofunconfirmedtransactions = len(self.unconfirmed_transactions)
         lengthofblocktransactions = len(block['data'])
-        if lengthofunconfirmedtransactions + 1 == lengthofblocktransactions:
+        if lengthofunconfirmedtransactions + 1 == lengthofblocktransactions or lengthofblocktransactions > lengthofunconfirmedtransactions:
             new_chain = self.chain
             new_chain.append(block)
             if len(new_chain) > len(self.chain):
@@ -148,6 +149,10 @@ class Blockchain:
                 return self.chain
             else:
                 return self.chain
+        else:
+            self.replace_chain()
+            return self.chain
+
 
     def proof_of_work(self, previous_proof):
         """ This is used for mining """
@@ -341,6 +346,7 @@ class Blockchain:
         verify = self.doubleSpendCheck(unconfirmedTransaction)
         if verify == False:
             self.unconfirmed_transactions.append(unconfirmedTransaction)
+            self.add_data(self.unconfirmed_transactions, UNconfirmed_transactions)
         # self.unconfirmed_transactions = set(self.unconfirmed_transactions)
         # self.add_unconfirmed_transaction = list(self.unconfirmed_transactions)
         return unconfirmedTransaction
@@ -454,15 +460,16 @@ class Blockchain:
                     if length > max_length and self.is_chain_valid(chain=chain):
                         max_length = length
                         longest_chain=chain
-                if longest_chain:
-                    if longest_chain != None:
-                        if len(longest_chain) > len(self.chain):
-                            self.chain = longest_chain
-                            return True
-                        else:
-                            longest_chain = self.chain
+                if longest_chain != None:
+                    if len(longest_chain) > len(self.chain):
+                        self.chain = longest_chain
+                        self.unconfirmed_transactions = []
+                        self.add_data(data=self.unconfirmed_transactions, DataBase=UNconfirmed_transactions)
+                        return True
                     else:
                         longest_chain = self.chain
+                else:
+                    longest_chain = self.chain
                 if response.status_code != 200:
                     longest_chain = self.chain
                     max_length = len(self.chain)
